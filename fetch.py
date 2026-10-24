@@ -9,10 +9,9 @@ from pathlib import Path
 TAGS = [
     "ポケモンチャンピオンズ",
     "ポケチャン",
-    "ポケモンチャンピオンズダブル",
-    "ポケチャンダブル",
     "ダブルバトル",
     "ポケモンダブル",
+    "ダブルバトル構築記事",
 ]
 # 記事のタイトル・冒頭・タグに、次の両方が含まれるものだけ残す。
 NEED_GAME = re.compile(r"チャンピオンズ|ポケチャン|champions", re.I)
@@ -64,9 +63,10 @@ def main():
     if OUT.exists():
         old = {a["link"]: a for a in json.loads(OUT.read_text("utf-8")).get("articles", [])}
 
+    one_month_ago = (datetime.now(JST) - timedelta(days=30)).date()
     for a in found.values():
         text = " ".join([a["title"], a["summary"], *a["tags"]])
-        if NEED_GAME.search(text) and NEED_DOUBLES.search(text):
+        if NEED_GAME.search(text) and NEED_DOUBLES.search(text) and a["date"] >= str(one_month_ago):
             old[a["link"]] = {k: a[k] for k in ("link", "title", "author", "date")}
 
     articles = sorted(old.values(), key=lambda a: a["date"], reverse=True)[:3000]
