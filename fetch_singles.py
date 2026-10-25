@@ -39,10 +39,17 @@ def fetch_tag(tag):
             date = parsedate_to_datetime(item.findtext("pubDate")).astimezone(JST).date().isoformat()
         except Exception:
             date = datetime.now(JST).date().isoformat()
+
+        # 著者情報：RSS から取得、またはURLからユーザーIDを抽出
+        author = (item.findtext(f"{DC}creator") or "").strip()
+        if not author:
+            match = re.search(r"https://note\.com/([^/]+)/", link)
+            author = match.group(1) if match else ""
+
         yield {
             "link": link,
             "title": (item.findtext("title") or "").strip(),
-            "author": (item.findtext(f"{DC}creator") or "").strip(),
+            "author": author,
             "date": date,
             "summary": re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:200],
         }
