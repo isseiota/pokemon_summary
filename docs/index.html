@@ -34,7 +34,7 @@ li span{display:block;color:var(--sub);font-size:.85rem}
 (async () => {
   const meta = document.getElementById("meta"), list = document.getElementById("list"), q = document.getElementById("q");
   let data;
-  try { data = await (await fetch("articles.json", {cache: "no-cache"})).json(); }
+  try { data = await (await fetch(`articles.json?t=${Date.now()}`, {cache: "no-cache"})).json(); }
   catch { meta.textContent = "記事リストを読み込めませんでした。時間をおいて再読み込みしてください。"; return; }
   const all = data.articles || [];
   meta.textContent = data.updated
