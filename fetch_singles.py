@@ -65,13 +65,13 @@ def main():
     if OUT.exists():
         old = {a["link"]: a for a in json.loads(OUT.read_text("utf-8")).get("articles", [])}
 
-    one_month_ago = (datetime.now(JST) - timedelta(days=30)).date()
+    two_months_ago = (datetime.now(JST) - timedelta(days=60)).date()
     for a in found.values():
         text = " ".join([a["title"], a["summary"], *a["tags"]])
         # 「チャンピオンズ」または「構築記事」タグを含み、タイトル・本文に「シングル」を含む
         has_game = NEED_GAME.search(text) or "ポケモンチャンピオンズ構築記事" in a["tags"]
         has_singles = NEED_SINGLES.search(text)
-        if has_game and has_singles and a["date"] >= str(one_month_ago):
+        if has_game and has_singles and a["date"] >= str(two_months_ago):
             old[a["link"]] = {k: a[k] for k in ("link", "title", "author", "date")}
 
     articles = sorted(old.values(), key=lambda a: a["date"], reverse=True)[:3000]
