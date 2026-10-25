@@ -14,9 +14,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python fetch.py
+      - run: python fetch_doubles.py
+      - run: python fetch_singles.py
       - run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/articles.json
+          git add docs/articles.json docs/singles.json
           git diff --cached --quiet || (git commit -m "記事リストを更新" && git push)
