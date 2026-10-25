@@ -74,7 +74,7 @@ def main():
         if has_game and has_singles and a["date"] >= str(two_months_ago):
             old[a["link"]] = {k: a[k] for k in ("link", "title", "author", "date")}
 
-    articles = sorted(old.values(), key=lambda a: a["date"], reverse=True)[:3000]
+    articles = sorted(old.values(), key=lambda a: a["date"], reverse=True)
     OUT.write_text(
         json.dumps({"updated": datetime.now(JST).isoformat(timespec="minutes"), "articles": articles},
                    ensure_ascii=False, indent=1),
