@@ -20,8 +20,48 @@ NEED_GAME = re.compile(r"チャンピオンズ|ポケチャン|champions", re.I)
 NEED_SINGLES = re.compile(r"シングル|singles?", re.I)
 
 OUT = Path("docs/singles.json")
+AUTHOR_CACHE_FILE = Path("docs/.author_cache.json")
 JST = timezone(timedelta(hours=9))
 DC = "{http://purl.org/dc/elements/1.1/}"
+
+
+def load_author_cache():
+    """著者名キャッシュを読み込む"""
+    if AUTHOR_CACHE_FILE.exists():
+        return json.loads(AUTHOR_CACHE_FILE.read_text("utf-8"))
+    return {}
+
+
+def save_author_cache(cache):
+    """著者名キャッシュを保存"""
+    AUTHOR_CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False), "utf-8")
+
+
+def fetch_author_name(author_id):
+    """note.com のプロフィールページから著者名を取得"""
+    try:
+        url = f"https://note.com/{author_id}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as res:
+            html = res.read().decode("utf-8")
+
+        # プロフィール名を抽出（<h1>や<meta name="description">など複数のパターンを試す）
+        match = re.search(r'<h1[^>]*>([^<]+)</h1>', html)
+        if match:
+            name = match.group(1).strip()
+            if name and name != author_id:
+                return name
+
+        # 別パターン：<title> から取得
+        match = re.search(r'<title>([^|<]+)', html)
+        if match:
+            name = match.group(1).strip()
+            if name and name != author_id:
+                return name
+    except Exception as e:
+        print(f"著者名取得失敗 {author_id}: {e}", file=sys.stderr)
+
+    return author_id
 
 
 def fetch_tag(tag):
@@ -56,6 +96,8 @@ def fetch_tag(tag):
 
 
 def main():
+    author_cache = load_author_cache()
+
     found, ok = {}, 0
     for tag in TAGS:
         try:
@@ -67,6 +109,16 @@ def main():
             print(f"取得失敗 #{tag}: {e}", file=sys.stderr)
     if ok == 0:
         sys.exit("すべてのタグで取得に失敗したため、更新しません。")
+
+    # 著者名を取得（キャッシュから または プロフィールページからスクレイピング）
+    for a in found.values():
+        author_id = a["author"]
+        if author_id:
+            if author_id not in author_cache:
+                author_cache[author_id] = fetch_author_name(author_id)
+            a["author"] = author_cache[author_id]
+
+    save_author_cache(author_cache)
 
     old = {}
     if OUT.exists():
