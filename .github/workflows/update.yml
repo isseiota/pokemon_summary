@@ -1,7 +1,8 @@
 name: update
 on:
   schedule:
-    - cron: "0 22 * * *"   # 毎日 日本時間 7:00
+    - cron: "0 21 * * *"   # 毎日 日本時間 6:00
+    - cron: "30 20 * * *"  # 毎日 日本時間 5:30（バックアップ）
   workflow_dispatch:        # 手動実行も可能
 permissions:
   contents: write
