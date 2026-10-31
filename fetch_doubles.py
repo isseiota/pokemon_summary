@@ -1,9 +1,10 @@
-"""noteのハッシュタグRSSから、ポケモンチャンピオンズのダブルバトル関連記事を集める。"""
+"""noteのハッシュタグRSSとキーワード検索から、ポケモンチャンピオンズのダブルバトル関連記事を集める。"""
 import json, re, sys, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
+from html import unescape
 
 # 集めるハッシュタグ（# は不要）。増やしたいときはここに足す。
 TAGS = [
@@ -17,6 +18,8 @@ TAGS = [
     "グロチャレ",
     "GC",
 ]
+# キーワード検索で集める（タグなし記事も対象）
+SEARCH_KEYWORDS = ["ポケモンチャンピオンズ"]
 # 記事のタイトル・冒頭・タグに、チャンピオンズが含まれるか。
 NEED_GAME = re.compile(r"チャンピオンズ|ポケチャン|champions", re.I)
 # 記事の本文・タイトルに「ダブル」が含まれるかをチェック。
@@ -98,6 +101,55 @@ def fetch_tag(tag):
         }
 
 
+def fetch_keyword(keyword, pages=2):
+    """キーワード検索で記事を取得（タグなし記事も対象）"""
+    for page in range(1, pages + 1):
+        url = f"https://note.com/search?q={urllib.parse.quote(keyword)}&sort=new&page={page}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as res:
+                html = res.read().decode("utf-8")
+        except Exception as e:
+            print(f"キーワード検索失敗 '{keyword}' (page {page}): {e}", file=sys.stderr)
+            continue
+
+        for match in re.finditer(
+            r'<a[^>]+href="(https://note\.com/[^/"]+/n/[^/"]+)"[^>]*>([^<]+)</a>',
+            html
+        ):
+            link = match.group(1)
+            title = unescape(match.group(2)).strip()
+
+            if not title:
+                continue
+
+            # URLからユーザーIDを抽出
+            author_match = re.search(r"https://note\.com/([^/]+)/", link)
+            author = author_match.group(1) if author_match else ""
+
+            # 日付を取得（個別ページにアクセス）
+            try:
+                req2 = urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req2, timeout=10) as res2:
+                    article_html = res2.read().decode("utf-8")
+
+                date_match = re.search(
+                    r'<time[^>]*datetime="(\d{4}-\d{2}-\d{2})',
+                    article_html
+                )
+                date = date_match.group(1) if date_match else datetime.now(JST).date().isoformat()
+            except Exception:
+                date = datetime.now(JST).date().isoformat()
+
+            yield {
+                "link": link,
+                "title": title,
+                "author": author,
+                "date": date,
+                "summary": "",
+            }
+
+
 def main():
     author_cache = load_author_cache()
 
@@ -110,6 +162,17 @@ def main():
             ok += 1
         except Exception as e:
             print(f"取得失敗 #{tag}: {e}", file=sys.stderr)
+
+    # キーワード検索でタグなし記事も取得
+    for keyword in SEARCH_KEYWORDS:
+        try:
+            for a in fetch_keyword(keyword):
+                if a["link"] not in found:
+                    found[a["link"]] = {**a, "tags": set()}
+            ok += 1
+        except Exception as e:
+            print(f"キーワード検索失敗 '{keyword}': {e}", file=sys.stderr)
+
     if ok == 0:
         sys.exit("すべてのタグで取得に失敗したため、更新しません。")
 

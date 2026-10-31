@@ -1,6 +1,6 @@
 # ポケチャン ダブルバトル note記事まとめ
 
-noteのハッシュタグRSSから、ポケモンチャンピオンズのダブルバトル関連記事のリンクを毎日集めて一覧にします。
+noteのハッシュタグRSSとキーワード検索から、ポケモンチャンピオンズの関連記事のリンクを毎日集めて一覧にします。
 サーバー・APIキー・費用は不要です。
 
 ## 公開手順（GitHub、すべて無料）
@@ -10,5 +10,8 @@ noteのハッシュタグRSSから、ポケモンチャンピオンズのダブ�
 4. 数分後、`https://ユーザー名.github.io/リポジトリ名/` で公開されます。以後、毎朝7時（日本時間）に自動更新されます。
 
 ## カスタマイズ
-- 集めるタグ・絞り込み条件：`fetch.py` の先頭（TAGS / NEED_GAME / NEED_DOUBLES）
+- 集めるタグ・キーワード・絞り込み条件：`fetch_singles.py` / `fetch_doubles.py` の先頭
+  - `TAGS`: ハッシュタグから取得する記事
+  - `SEARCH_KEYWORDS`: キーワード検索で取得する記事（タグなし記事も対象）
+  - `NEED_GAME` / `NEED_SINGLES` / `NEED_DOUBLES`: フィルタリング条件
 - 実行時刻：`.github/workflows/update.yml` の cron（UTC表記）
