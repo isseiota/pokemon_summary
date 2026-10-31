@@ -1,5 +1,5 @@
 """noteのハッシュタグRSSとキーワード検索から、ポケモンチャンピオンズのシングルバトル関連記事を集める。"""
-import json, re, sys, urllib.parse, urllib.request
+import json, re, sys, time, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -98,7 +98,7 @@ def fetch_tag(tag):
         }
 
 
-def fetch_keyword(keyword, pages=2):
+def fetch_keyword(keyword, pages=5):
     """キーワード検索で記事を取得（タグなし記事も対象）"""
     for page in range(1, pages + 1):
         url = f"https://note.com/search?q={urllib.parse.quote(keyword)}&sort=new&page={page}"
@@ -110,15 +110,13 @@ def fetch_keyword(keyword, pages=2):
             print(f"キーワード検索失敗 '{keyword}' (page {page}): {e}", file=sys.stderr)
             continue
 
-        for match in re.finditer(
-            r'<a[^>]+href="(https://note\.com/[^/"]+/n/[^/"]+)"[^>]*>([^<]+)</a>',
-            html
-        ):
+        found_articles = False
+        for match in re.finditer(r'href="(https://note\.com/[^/"]+/n/[^"]+)"', html):
             link = match.group(1)
-            title = unescape(match.group(2)).strip()
-
-            if not title:
+            if not link or "/n/" not in link:
                 continue
+
+            found_articles = True
 
             # URLからユーザーIDを抽出
             author_match = re.search(r"https://note\.com/([^/]+)/", link)
@@ -130,21 +128,34 @@ def fetch_keyword(keyword, pages=2):
                 with urllib.request.urlopen(req2, timeout=10) as res2:
                     article_html = res2.read().decode("utf-8")
 
-                date_match = re.search(
-                    r'<time[^>]*datetime="(\d{4}-\d{2}-\d{2})',
-                    article_html
-                )
-                date = date_match.group(1) if date_match else datetime.now(JST).date().isoformat()
-            except Exception:
-                date = datetime.now(JST).date().isoformat()
+                # タイトルを取得
+                title_match = re.search(r'<title>([^|<]+)', article_html)
+                title = title_match.group(1).strip() if title_match else ""
 
-            yield {
-                "link": link,
-                "title": title,
-                "author": author,
-                "date": date,
-                "summary": "",
-            }
+                # タイトルがキーワードを含むかチェック
+                if not title or keyword not in title:
+                    continue
+
+                # 日付を取得（複数のパターンを試す）
+                date_match = re.search(r'"datePublished":"(\d{4}-\d{2}-\d{2})', article_html)
+                if not date_match:
+                    date_match = re.search(r'<time[^>]*datetime="(\d{4}-\d{2}-\d{2})', article_html)
+                date = date_match.group(1) if date_match else datetime.now(JST).date().isoformat()
+
+                yield {
+                    "link": link,
+                    "title": title,
+                    "author": author,
+                    "date": date,
+                    "summary": "",
+                }
+
+            except Exception as e:
+                print(f"記事処理エラー {link}: {e}", file=sys.stderr)
+
+        # 次のページへ行く前に遅延（note.comへの負荷軽減）
+        if found_articles and page < pages:
+            time.sleep(2)
 
 
 def main():
@@ -160,10 +171,10 @@ def main():
         except Exception as e:
             print(f"取得失敗 #{tag}: {e}", file=sys.stderr)
 
-    # キーワード検索でタグなし記事も取得
+    # キーワード検索でタグなし記事も取得（2ヶ月分を確保するため15ページまで取得）
     for keyword in SEARCH_KEYWORDS:
         try:
-            for a in fetch_keyword(keyword):
+            for a in fetch_keyword(keyword, pages=15):
                 if a["link"] not in found:
                     found[a["link"]] = {**a, "tags": set()}
             ok += 1
