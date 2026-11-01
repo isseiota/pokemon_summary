@@ -29,11 +29,12 @@ li span{display:block;color:var(--sub);font-size:.85rem}
 </head>
 <body>
 <main>
-  <h1>ポケチャン<br>note記事まとめ</h1>
+  <h1>note記事まとめ</h1>
   <p class="meta" id="meta">読み込み中…</p>
   <div class="tabs">
-    <button class="tab-btn active" data-type="doubles">ダブルバトル</button>
-    <button class="tab-btn" data-type="singles">シングルバトル</button>
+    <button class="tab-btn active" data-type="doubles" data-game="pokemon">ポケモン：ダブル</button>
+    <button class="tab-btn" data-type="singles" data-game="pokemon">ポケモン：シングル</button>
+    <button class="tab-btn" data-type="gundam" data-game="gundam">ガンダム</button>
   </div>
   <input id="q" type="search" placeholder="タイトルや著者名で絞り込む" aria-label="記事を絞り込む">
   <div id="list"></div>
@@ -45,11 +46,12 @@ li span{display:block;color:var(--sub);font-size:.85rem}
   let data = {}, currentType = "doubles";
 
   try {
-    const [d, s] = await Promise.all([
+    const [d, s, g] = await Promise.all([
       (await fetch(`articles.json?t=${Date.now()}`, {cache: "no-cache"})).json(),
-      (await fetch(`singles.json?t=${Date.now()}`, {cache: "no-cache"})).json()
+      (await fetch(`singles.json?t=${Date.now()}`, {cache: "no-cache"})).json(),
+      (await fetch(`gundam.json?t=${Date.now()}`, {cache: "no-cache"})).json()
     ]);
-    data = {doubles: d, singles: s};
+    data = {doubles: d, singles: s, gundam: g};
   } catch {
     meta.textContent = "記事リストを読み込めませんでした。時間をおいて再読み込みしてください。";
     return;
