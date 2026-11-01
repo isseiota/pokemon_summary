@@ -83,13 +83,32 @@ def fetch_tag(tag):
             match = re.search(r"https://note\.com/([^/]+)/", link)
             author = match.group(1) if match else ""
 
+        # 記事ページにアクセスして本文を取得
+        body = fetch_article_body(link)
+
         yield {
             "link": link,
             "title": (item.findtext("title") or "").strip(),
             "author": author,
             "date": date,
             "summary": re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:200],
+            "body": body,
         }
+
+
+def fetch_article_body(link):
+    """記事ページから本文を取得"""
+    try:
+        req = urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as res:
+            html = res.read().decode("utf-8")
+        # 本文を抽出（スクリプトタグの内容は除外）
+        body = re.sub(r"<script[^>]*>.*?</script>", "", html, flags=re.DOTALL)
+        body = re.sub(r"<[^>]+>", "", body)
+        return body
+    except Exception as e:
+        print(f"本文取得失敗 {link}: {e}", file=sys.stderr)
+        return ""
 
 
 def fetch_keyword(keyword, pages=5):
@@ -142,6 +161,7 @@ def fetch_keyword(keyword, pages=5):
                     "author": author,
                     "date": date,
                     "summary": "",
+                    "body": article_html,
                 }
 
             except Exception as e:
@@ -199,9 +219,9 @@ def main():
     # 前日以降の記事を取得（自動実行は毎日朝7時）
     yesterday = (datetime.now(JST) - timedelta(days=1)).date()
     for a in found.values():
-        text = " ".join([a["title"], a["summary"], *a["tags"]])
-        # ガンダムカードゲームの記事
-        has_game = NEED_GAME.search(text)
+        title_and_body = " ".join([a["title"], a.get("body", "")])
+        # タイトルと本文に「ガンダムカードゲーム」が含まれているかチェック
+        has_game = "ガンダムカードゲーム" in title_and_body
         if has_game and a["date"] >= str(yesterday):
             old[a["link"]] = {k: a[k] for k in ("link", "title", "author", "date")}
 
