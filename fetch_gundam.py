@@ -9,8 +9,6 @@ from html import unescape
 # 集めるハッシュタグ（# は不要）。増やしたいときはここに足す。
 TAGS = [
     "ガンダムカードゲーム",
-    "GTCG",
-    "G-TCG",
     "ガンダムカード",
 ]
 # キーワード検索で集める（タグなし記事も対象）
@@ -155,6 +153,10 @@ def fetch_keyword(keyword, pages=5):
 
 
 def main():
+    import sys
+    is_manual = "--full" in sys.argv or len(sys.argv) > 1
+    fetch_pages = 20 if is_manual else 15
+
     author_cache = load_author_cache()
 
     found, ok = {}, 0
@@ -167,10 +169,10 @@ def main():
         except Exception as e:
             print(f"取得失敗 #{tag}: {e}", file=sys.stderr)
 
-    # キーワード検索でタグなし記事も取得（2ヶ月分を確保するため15ページまで取得）
+    # キーワード検索でタグなし記事も取得（手動実行は1ヶ月分、自動実行は2ヶ月分を確保するため15ページまで取得）
     for keyword in SEARCH_KEYWORDS:
         try:
-            for a in fetch_keyword(keyword, pages=15):
+            for a in fetch_keyword(keyword, pages=fetch_pages):
                 if a["link"] not in found:
                     found[a["link"]] = {**a, "tags": set()}
             ok += 1
