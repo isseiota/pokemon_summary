@@ -10,11 +10,12 @@ from html import unescape
 TAGS = [
     "ガンダムカードゲーム",
     "ガンダムカード",
+    "GCG",
 ]
 # キーワード検索で集める（タグなし記事も対象）
-SEARCH_KEYWORDS = ["ガンダムカードゲーム"]
+SEARCH_KEYWORDS = ["ガンダムカードゲーム", "GCG"]
 # 記事のタイトル・冒頭・タグに、ガンダムカードゲームが含まれるか。
-NEED_GAME = re.compile(r"ガンダムカードゲーム|G-TCG|GTCG|ガンダムカード", re.I)
+NEED_GAME = re.compile(r"ガンダムカードゲーム|G-TCG|GTCG|ガンダムカード|GCG", re.I)
 
 OUT = Path("docs/gundam.json")
 AUTHOR_CACHE_FILE = Path("docs/.author_cache.json")
@@ -216,13 +217,14 @@ def main():
     if OUT.exists():
         old = {a["link"]: a for a in json.loads(OUT.read_text("utf-8")).get("articles", [])}
 
-    # 前日以降の記事を取得（自動実行は毎日朝7時）
-    yesterday = (datetime.now(JST) - timedelta(days=1)).date()
+    # 記事の日付範囲を決定（手動実行は1週間、自動実行は2日前から）
+    days_back = 7 if is_manual else 2
+    threshold = (datetime.now(JST) - timedelta(days=days_back)).date()
     for a in found.values():
         title_and_body = " ".join([a["title"], a.get("body", "")])
-        # タイトルと本文に「ガンダムカードゲーム」が含まれているかチェック
-        has_game = "ガンダムカードゲーム" in title_and_body
-        if has_game and a["date"] >= str(yesterday):
+        # タイトルと本文に、ガンダムカードゲーム関連の表記が含まれているかチェック
+        has_game = NEED_GAME.search(title_and_body) is not None
+        if has_game and a["date"] >= str(threshold):
             old[a["link"]] = {k: a[k] for k in ("link", "title", "author", "date")}
 
     articles = sorted(old.values(), key=lambda a: a["date"], reverse=True)
