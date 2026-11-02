@@ -1,8 +1,8 @@
 name: update
 on:
   schedule:
-    - cron: "0 21 * * *"   # 毎日 日本時間 6:00
-    - cron: "30 20 * * *"  # 毎日 日本時間 5:30（バックアップ）
+    # 毎日 日本時間 6:00 に実行（UTC 21:00 相当）
+    - cron: "0 21 * * *"
   workflow_dispatch:        # 手動実行も可能
 permissions:
   contents: write
@@ -11,14 +11,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Read Python version
+        id: python
+        run: echo "version=$(cat .python-version)" >> $GITHUB_OUTPUT
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
-      - run: python fetch_doubles.py
-      - run: python fetch_singles.py
-      - run: python fetch_gundam.py
-      - run: |
+          python-version: ${{ steps.python.outputs.version }}
+          cache: "pip"
+
+      - name: Run fetch_doubles
+        run: python fetch_doubles.py || exit 1
+
+      - name: Run fetch_singles
+        run: python fetch_singles.py || exit 1
+
+      - name: Run fetch_gundam
+        run: python fetch_gundam.py || exit 1
+
+      - name: Check for changes
+        run: git diff --cached --quiet || echo "changes_found=true" >> $GITHUB_ENV
+
+      - name: Configure Git
+        if: env.changes_found == 'true'
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push
+        if: env.changes_found == 'true'
+        run: |
           git add docs/articles.json docs/singles.json docs/gundam.json
-          git diff --cached --quiet || (git commit -m "記事リストを更新" && git push)
+          git commit -m "記事リストを更新 $(date +'%Y-%m-%d %H:%M:%S')"
+          git push
+
+      - name: Report success
+        run: echo "✅ All scripts executed successfully"
+

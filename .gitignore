@@ -1,2 +1,5 @@
 Python/
 docs/.author_cache.json
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -2,6 +2,9 @@
 import os
 from datetime import timedelta
 
+# Python バージョン設定
+PYTHON_VERSION = "3.12"
+
 # タイムアウト設定（秒）
 TIMEOUT_RSS = int(os.getenv("NOTE_TIMEOUT_RSS", "30"))
 TIMEOUT_PAGE = int(os.getenv("NOTE_TIMEOUT_PAGE", "10"))
@@ -15,6 +18,7 @@ PAGES_AUTO = int(os.getenv("NOTE_PAGES_AUTO", "15"))
 # キャッシュ設定
 CACHE_DIR = "docs"
 AUTHOR_CACHE_FILE = f"{CACHE_DIR}/.author_cache.json"
+CACHE_EXPIRE_DAYS = int(os.getenv("NOTE_CACHE_EXPIRE_DAYS", "30"))
 
 # User-Agent リスト（ローテーション用）
 USER_AGENTS = [
@@ -26,3 +30,20 @@ USER_AGENTS = [
 
 # ログレベル
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+
+# 設定値の検証
+if TIMEOUT_RSS <= 0:
+    raise ValueError("TIMEOUT_RSS は 0 より大きい値である必要があります")
+if TIMEOUT_PAGE <= 0:
+    raise ValueError("TIMEOUT_PAGE は 0 より大きい値である必要があります")
+if TIMEOUT_AUTHOR <= 0:
+    raise ValueError("TIMEOUT_AUTHOR は 0 より大きい値である必要があります")
+if PAGINATING_DELAY < 0:
+    raise ValueError("PAGINATING_DELAY は 0 以上の値である必要があります")
+if PAGES_MANUAL <= 0:
+    raise ValueError("PAGES_MANUAL は 0 より大きい値である必要があります")
+if PAGES_AUTO <= 0:
+    raise ValueError("PAGES_AUTO は 0 より大きい値である必要があります")
+if CACHE_EXPIRE_DAYS <= 0:
+    raise ValueError("CACHE_EXPIRE_DAYS は 0 より大きい値である必要があります")
+
