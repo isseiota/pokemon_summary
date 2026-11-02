@@ -5,6 +5,7 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import config
 from common import (
     load_author_cache,
     save_author_cache,
@@ -30,8 +31,8 @@ NEED_GAME = re.compile(r"チャンピオンズ|ポケチャン|champions", re.I)
 # 記事の本文・タイトルに「シングル」が含まれるかをチェック。
 NEED_SINGLES = re.compile(r"シングル|singles?", re.I)
 
-OUT = Path("docs/singles.json")
-AUTHOR_CACHE_FILE = Path("docs/.author_cache.json")
+OUT = Path(f"{config.CACHE_DIR}/singles.json")
+AUTHOR_CACHE_FILE = Path(config.AUTHOR_CACHE_FILE)
 
 
 

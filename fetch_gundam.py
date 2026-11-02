@@ -5,6 +5,7 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import config
 from common import (
     load_author_cache,
     save_author_cache,
@@ -25,8 +26,8 @@ SEARCH_KEYWORDS = ["ガンダムカードゲーム", "GCG"]
 # 記事のタイトル・冒頭・タグに、ガンダムカードゲームが含まれるか。
 NEED_GAME = re.compile(r"ガンダムカードゲーム|G-TCG|GTCG|ガンダムカード|GCG", re.I)
 
-OUT = Path("docs/gundam.json")
-AUTHOR_CACHE_FILE = Path("docs/.author_cache.json")
+OUT = Path(f"{config.CACHE_DIR}/gundam.json")
+AUTHOR_CACHE_FILE = Path(config.AUTHOR_CACHE_FILE)
 
 
 def main():
