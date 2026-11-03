@@ -31,16 +31,17 @@ jobs:
         run: python fetch_gundam.py || exit 1
 
       - name: Check for changes
-        run: git diff --cached --quiet || echo "changes_found=true" >> $GITHUB_ENV
+        id: check
+        run: git diff --cached --quiet || echo "changes_found=true" >> $GITHUB_OUTPUT
 
       - name: Configure Git
-        if: env.changes_found == 'true'
+        if: steps.check.outputs.changes_found == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Commit and push
-        if: env.changes_found == 'true'
+        if: steps.check.outputs.changes_found == 'true'
         run: |
           git add docs/articles.json docs/singles.json docs/gundam.json
           git commit -m "記事リストを更新 $(date +'%Y-%m-%d %H:%M:%S')"
