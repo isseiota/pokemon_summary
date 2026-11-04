@@ -32,7 +32,7 @@ jobs:
 
       - name: Check for changes
         id: check
-        run: git diff --cached --quiet || echo "changes_found=true" >> $GITHUB_OUTPUT
+        run: git diff --quiet || echo "changes_found=true" >> $GITHUB_OUTPUT
 
       - name: Configure Git
         if: steps.check.outputs.changes_found == 'true'
