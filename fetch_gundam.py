@@ -75,8 +75,8 @@ def main():
     if OUT.exists():
         old = {a["link"]: a for a in json.loads(OUT.read_text("utf-8")).get("articles", [])}
 
-    # 記事の日付範囲を決定（手動実行は1週間、自動実行は2日前から）
-    days_back = 7 if is_manual else 2
+    # 記事の日付範囲を決定（手動実行・自動実行とも2日前から）
+    days_back = 2
     threshold = (datetime.now(JST) - timedelta(days=days_back)).date()
     for a in found.values():
         title_and_body = " ".join([a["title"], a.get("body", "")])
