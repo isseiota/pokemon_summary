@@ -225,8 +225,9 @@ def fetch_keyword(
 				title_match = re.search(r'<title>([^|<]+)', article_html)
 				title = title_match.group(1).strip() if title_match else ""
 
-				# タイトルがキーワードを含むかチェック
-				if not title or keyword not in title:
+				# タイトルが必須
+				if not title:
+					logger.debug(f"タイトルなし: {link}")
 					continue
 
 				# 日付を取得（複数のパターンを試す）
