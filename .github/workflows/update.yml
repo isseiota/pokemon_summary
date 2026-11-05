@@ -10,13 +10,13 @@ jobs:
   update:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Read Python version
         id: python
         run: echo "version=$(cat .python-version)" >> $GITHUB_OUTPUT
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5.2.1
         with:
           python-version: ${{ steps.python.outputs.version }}
 
