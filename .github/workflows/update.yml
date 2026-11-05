@@ -19,7 +19,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ steps.python.outputs.version }}
-          cache: "pip"
 
       - name: Run fetch_doubles
         run: python fetch_doubles.py || exit 1
